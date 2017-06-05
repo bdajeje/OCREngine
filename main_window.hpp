@@ -6,13 +6,15 @@
 #include <QPixmap>
 #include <QDoubleSpinBox>
 
+#include <tesseract/baseapi.h>
+
 class MainWindow final : public QMainWindow
 {
   Q_OBJECT
 
   public:
 
-	MainWindow(QWidget *parent = 0);
+	MainWindow(tesseract::TessBaseAPI* tesseract);
 
   private:
 
@@ -23,11 +25,11 @@ class MainWindow final : public QMainWindow
   private slots:
 
 	void selectImageFile();
-	void readResultFile();
 	void submit();
 
   private:
 
+	tesseract::TessBaseAPI* _tesseract;
 	QLabel* _cut_image;
 	QLabel* _resulted_card_name;
 	QLabel* _selected_image_name;

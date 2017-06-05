@@ -1,0 +1,6 @@
+use lib directly
+extract DB
+benchmark
+
+libtesseract-dev
+libleptonica-dev

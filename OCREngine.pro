@@ -11,13 +11,14 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TARGET = OCREngine
 TEMPLATE = app
 
+LIBS += -ltesseract -llept
 
 SOURCES += main.cpp\
-        main_window.cpp \
-    utils/files.cpp \
-    utils/exception.cpp
+				main_window.cpp \
+		utils/files.cpp \
+		utils/exception.cpp
 
 HEADERS  += main_window.hpp \
-    utils/json.hpp \
-    utils/files.hpp \
-    utils/exception.hpp
+		utils/json.hpp \
+		utils/files.hpp \
+		utils/exception.hpp

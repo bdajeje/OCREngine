@@ -11,13 +11,14 @@
 #include <QMessageBox>
 #include <QTimer>
 
+#include <leptonica/allheaders.h>
+
 #include <utils/files.hpp>
 #include <utils/json.hpp>
 
 namespace {
   constexpr int FILTER_LIMIT = 150;
   const char* CUT_IMAGE_FILEPATH_PREFIX = "/tmp/magic_cut_image_";
-  const char* IMAGE_NAME_OUTPUT_FILEPATH = "/tmp/magic_image_name";
   const char* SETTING_FILEPATH = "./assets/values";
 
   QString filterResult(QString input)
@@ -60,8 +61,9 @@ std::cout << result.toStdString() << std::endl;
   }
 }
 
-MainWindow::MainWindow(QWidget *parent)
-  : QMainWindow(parent)
+MainWindow::MainWindow(tesseract::TessBaseAPI* tesseract)
+  : QMainWindow()
+  , _tesseract {tesseract}
 {
   auto central_widget = new QWidget;
   auto main_layout = new QVBoxLayout(central_widget);
@@ -154,7 +156,10 @@ void MainWindow::submit()
 	_cut_image->setPixmap(_cut_image_pixmap);
 
 	if(_cut_image_pixmap.isNull())
-	  error(QString("para "));
+	{
+	  error(QString("Invalid cuted image"));
+	  return;
+	}
 
 	std::string cut_image_filepath = CUT_IMAGE_FILEPATH_PREFIX + image_file.fileName().toStdString();
 	if(!_cut_image_pixmap.save(cut_image_filepath.c_str()))
@@ -163,10 +168,17 @@ void MainWindow::submit()
 	  return;
 	}
 
-	system((std::string("tesseract -l eng ") + cut_image_filepath +" "+ std::string(IMAGE_NAME_OUTPUT_FILEPATH)).c_str());
+	// Open input image with leptonica library
+	Pix* leptonica_image = pixRead(cut_image_filepath.c_str());
+	_tesseract->SetImage(leptonica_image);
 
-	QTimer::singleShot(2000, this, SLOT(readResultFile()));
-	_resulted_card_name->setText("Processing...");
+	// Get OCR result
+	char* outText = _tesseract->GetUTF8Text();
+	_resulted_card_name->setText(filterResult(outText));
+
+	// Clean
+	pixDestroy(&leptonica_image);
+	delete[] outText;
 }
 
 void MainWindow::selectImageFile()
@@ -178,19 +190,6 @@ void MainWindow::selectImageFile()
 	return;
 
   _selected_image_name->setText(QFileInfo(_file_path).fileName());
-}
-
-void MainWindow::readResultFile()
-{
-  QFile result_file(QString(IMAGE_NAME_OUTPUT_FILEPATH) + ".txt");
-
-  if(!result_file.exists() || !result_file.open(QIODevice::ReadOnly))
-  {
-	error("Incorrect result file not found: " + result_file.fileName());
-	return;
-  }
-
-  _resulted_card_name->setText(filterResult(result_file.readAll()));
 }
 
 void MainWindow::error(const QString& error, bool reset)
