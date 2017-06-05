@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <QLabel>
 #include <QPixmap>
+#include <QDoubleSpinBox>
 
 class MainWindow final : public QMainWindow
 {
@@ -26,6 +27,10 @@ class MainWindow final : public QMainWindow
 
     QLabel* _cut_image;
     QLabel* _resulted_card_name;
+    QSpinBox* _x_input;
+    QSpinBox* _y_input;
+    QDoubleSpinBox* _width_input;
+    QDoubleSpinBox* _heigth_input;
     QPixmap _cut_image_pixmap;
 };
 

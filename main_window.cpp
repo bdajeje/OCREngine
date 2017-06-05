@@ -7,15 +7,20 @@
 #include <QFileDialog>
 #include <QPushButton>
 #include <QVBoxLayout>
+#include <QHBoxLayout>
 #include <QMessageBox>
 #include <QTimer>
 
 namespace {
   constexpr int FILTER_LIMIT = 150;
-  constexpr int IMAGE_START_X = 20;
-  constexpr int IMAGE_START_Y = 20;
-  constexpr float IMAGE_WIDTH_RATIO = 0.65;
-  constexpr float IMAGE_HEIGHT_RATIO = 0.07;
+//  constexpr int IMAGE_START_X = 20;
+//  constexpr int IMAGE_START_Y = 20;
+//  constexpr int IMAGE_START_X = 80;
+//  constexpr int IMAGE_START_Y = 70;
+//  constexpr float IMAGE_WIDTH_RATIO = 0.65;
+//  constexpr float IMAGE_HEIGHT_RATIO = 0.07;
+//  constexpr float IMAGE_WIDTH_RATIO = 0.4;
+//  constexpr float IMAGE_HEIGHT_RATIO = 0.05;
   const char* CUT_IMAGE_FILEPATH_PREFIX = "/tmp/magic_cut_image_";
   const char* IMAGE_NAME_OUTPUT_FILEPATH = "/tmp/magic_image_name";
 
@@ -65,12 +70,34 @@ MainWindow::MainWindow(QWidget *parent)
   auto central_widget = new QWidget;
   auto main_layout = new QVBoxLayout(central_widget);
 
+  auto size_layout = new QHBoxLayout;
+  _x_input = new QSpinBox;
+  _x_input->setPrefix("x: ");
+  _x_input->setRange(0, 99999);
+  _y_input = new QSpinBox;
+  _y_input->setPrefix("y: ");
+  _y_input->setRange(0, 99999);
+  size_layout->addWidget(_x_input);
+  size_layout->addWidget(_y_input);
+
+  auto positions_layout = new QHBoxLayout;
+  _width_input = new QDoubleSpinBox;
+  _width_input->setPrefix("w: ");
+  _width_input->setRange(0, 1);
+  _heigth_input = new QDoubleSpinBox;
+  _heigth_input->setPrefix("h: ");
+  _heigth_input->setRange(0, 1);
+  positions_layout->addWidget(_width_input);
+  positions_layout->addWidget(_heigth_input);
+
   _cut_image = new QLabel;
   _resulted_card_name = new QLabel;
 
   auto select_file_btn = new QPushButton("Select Image");
   connect(select_file_btn, SIGNAL(pressed()), this, SLOT(selectImageFile()));
 
+  main_layout->addLayout(size_layout);
+  main_layout->addLayout(positions_layout);
   main_layout->addWidget(select_file_btn);
   main_layout->addWidget(_cut_image);
   main_layout->addWidget(_resulted_card_name);
@@ -80,7 +107,7 @@ MainWindow::MainWindow(QWidget *parent)
 void MainWindow::selectImageFile()
 {
   QString file_path = QFileDialog::getOpenFileName(this,
-      tr("Open Image"), "./images", tr("Image Files (*.png *.jpg *.bmp)"));
+      tr("Open Image"), "./images/nani", tr("Image Files (*.png *.jpg *.bmp)"));
 
   if(file_path.isEmpty())
     return;
@@ -94,9 +121,10 @@ void MainWindow::selectImageFile()
 
   QPixmap image (file_path);
   auto image_size = image.size();
-  int copy_width = image_size.width() * IMAGE_WIDTH_RATIO;
-  int copy_height = image_size.height() * IMAGE_HEIGHT_RATIO;
-  _cut_image_pixmap = filterImage(image.copy(IMAGE_START_X, IMAGE_START_Y, copy_width, copy_height));
+  int copy_width = image_size.width() * _width_input->value();
+  int copy_height = image_size.height() * _heigth_input->value();
+//  _cut_image_pixmap = filterImage(image.copy(IMAGE_START_X, IMAGE_START_Y, copy_width, copy_height));
+  _cut_image_pixmap = image.copy(_x_input->value(), _y_input->value(), copy_width, copy_height);
   _cut_image->setPixmap(_cut_image_pixmap);
 
   if(_cut_image_pixmap.isNull())
