@@ -13,6 +13,11 @@ TEMPLATE = app
 
 
 SOURCES += main.cpp\
-        main_window.cpp
+        main_window.cpp \
+    utils/files.cpp \
+    utils/exception.cpp
 
-HEADERS  += main_window.hpp
+HEADERS  += main_window.hpp \
+    utils/json.hpp \
+    utils/files.hpp \
+    utils/exception.hpp
