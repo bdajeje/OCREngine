@@ -13,6 +13,8 @@
 
 #include <leptonica/allheaders.h>
 
+#include <boost/algorithm/string.hpp>
+
 #include <utils/files.hpp>
 #include <utils/json.hpp>
 
@@ -90,19 +92,26 @@ MainWindow::MainWindow(tesseract::TessBaseAPI* tesseract)
 
   _cut_image = new QLabel;
   _resulted_card_name = new QLabel;
-  auto submit_btn = new QPushButton("Submit");
-
-  auto select_file_btn = new QPushButton("Select Image");
   _selected_image_name = new QLabel;
+  _selected_deck_name = new QLabel;
+  _result_text = new QLabel;
+  auto submit_btn = new QPushButton("Submit");
+  auto select_file_btn = new QPushButton("Select Image");
+  auto select_deckfile_btn = new QPushButton("Select Deck");
+
   connect(select_file_btn, SIGNAL(pressed()), this, SLOT(selectImageFile()));
+  connect(select_deckfile_btn, SIGNAL(pressed()), this, SLOT(selectDeckFile()));
   connect(submit_btn, SIGNAL(pressed()), this, SLOT(submit()));
 
   main_layout->addLayout(size_layout);
   main_layout->addLayout(positions_layout);
   main_layout->addWidget(select_file_btn);
   main_layout->addWidget(_selected_image_name);
+  main_layout->addWidget(select_deckfile_btn);
+  main_layout->addWidget(_selected_deck_name);
   main_layout->addWidget(_cut_image);
   main_layout->addWidget(_resulted_card_name);
+  main_layout->addWidget(_result_text);
   main_layout->addWidget(submit_btn);
   setCentralWidget(central_widget);
 
@@ -176,6 +185,8 @@ void MainWindow::submit()
 	char* outText = _tesseract->GetUTF8Text();
 	_resulted_card_name->setText(filterResult(outText));
 
+	foundCardName(outText);
+
 	// Clean
 	pixDestroy(&leptonica_image);
 	delete[] outText;
@@ -192,10 +203,63 @@ void MainWindow::selectImageFile()
   _selected_image_name->setText(QFileInfo(_file_path).fileName());
 }
 
+void MainWindow::selectDeckFile()
+{
+  QString file_path = QFileDialog::getOpenFileName(this, tr("Open Deck File"));
+
+  if(file_path.isEmpty())
+	return;
+
+  _selected_deck_name->setText(QFileInfo(file_path).fileName());
+
+  std::string deck_content = files::read(file_path.toStdString());
+  std::vector<std::string> splited_content;
+  boost::algorithm::split(splited_content, deck_content, boost::is_any_of("\n"));
+
+  for(const std::string& card_name : splited_content)
+  {
+	  if(card_name.empty())
+		  continue;
+
+	  auto found = _expected_cards.find(card_name);
+	  if(found == _expected_cards.end())
+		  _expected_cards[card_name] = 1;
+	  else
+		  ++(found->second);
+  }
+}
+
 void MainWindow::error(const QString& error, bool reset)
 {
   QMessageBox::warning(this, "Error", error);
 
   if(reset)
 	_resulted_card_name->setText("");
+}
+
+bool MainWindow::foundCardName(const char* read_card_name)
+{
+	auto found = _expected_cards.find(read_card_name);
+
+	if(found != _expected_cards.end() && found->second > 0)
+	{
+		--(found->second);
+		acceptCard();
+		return true;
+	}
+
+	refuseCard();
+	return false;
+}
+
+void MainWindow::acceptCard()
+{
+	_result_text->setText("Accepted");
+	_result_text->setStyleSheet("color: green;");
+}
+
+void MainWindow::refuseCard()
+{
+	_result_text->setText("Refused");
+	_result_text->setStyleSheet("color: red;");
 }
