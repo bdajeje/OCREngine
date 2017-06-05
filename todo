@@ -1,6 +1,7 @@
-use lib directly
 extract DB
 benchmark
+better method than UTF8 text for tesseract?
+crash -> need to manually build tesseract?
 
 libtesseract-dev
 libleptonica-dev
